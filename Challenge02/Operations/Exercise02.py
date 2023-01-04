@@ -22,4 +22,3 @@ Perimeter = (height + width) * 2
 
 print(f'The area of rectangle is: {area}')
 print(f'The perimeter of rectangle is: {Perimeter}')
-
