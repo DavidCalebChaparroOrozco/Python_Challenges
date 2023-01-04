@@ -1,3 +1,4 @@
+# Value within range
 numA = int(input('Enter the number: '))
 valueMin = 0
 valueMax = 5
