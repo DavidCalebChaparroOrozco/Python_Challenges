@@ -1,3 +1,5 @@
+# For this exercise let's test what we have learned so far, we will create a book store, 
+# if you want to add more data you can add them.
 print(" Enter to the following book data ".center(50,"-"))
 name = input("Enter the name of the book: ")
 id = int(input("Enter the ID of the book: "))
