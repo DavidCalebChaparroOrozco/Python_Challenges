@@ -9,4 +9,6 @@ Starting from basic Python syntax to working with Flask and Django themes.
 
 - Challenges02: Logic operators, arithmetical operations, Python Operators
 
-- Challenges03: 
+- Challenges03: Control statements (if, else and if_else_simplified)
+
+- Challenges04: Cycles (for / while), word break and continue
