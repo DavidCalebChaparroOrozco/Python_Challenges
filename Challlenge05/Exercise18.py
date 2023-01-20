@@ -8,4 +8,3 @@ for element in tupleA:
     if element < 5:
         listA.append(element)
 print(listA)
-
