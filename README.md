@@ -12,3 +12,5 @@ Starting from basic Python syntax to working with Flask and Django themes.
 - Challenges03: Control statements (if, else and if_else_simplified)
 
 - Challenges04: Cycles (for / while), word break and continue
+
+- Challenges05: List, tuple, set, dictionaries 
