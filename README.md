@@ -14,3 +14,5 @@ Starting from basic Python syntax to working with Flask and Django themes.
 - Challenges04: Cycles (for / while), word break and continue
 
 - Challenges05: List, tuple, set, dictionaries 
+
+- Challenges06: Functions (passing Arguments, return statement, default values + hint, variable arguments)
