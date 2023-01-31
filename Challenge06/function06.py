@@ -1,4 +1,3 @@
-# display_names
 def displayNames(names):
     for name in names:
         print(name)
