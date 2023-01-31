@@ -1,5 +1,5 @@
 # We are asked to calculate the area and perimeter of a rectangle. 
-# we must create the following variables 
+# we must create the following variable's
 # height(int) 
 # width(int) 
 
