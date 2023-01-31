@@ -4,9 +4,9 @@ numText = ''
 
 if numA == 1:
     numText= 'Number One'
-elif numA ==2:
+elif numA == 2:
     numText = 'Number Two'
-elif numA ==3:
+elif numA == 3:
     numText = 'Num Three'
 else:
     numText = 'Out of range value'
