@@ -3,6 +3,7 @@
 def calculate_total_payment(payment, tax) -> float:
     return payment + payment * (tax / 100)
 
+
 payment = float(input("Enter payment amount: "))
 tax = float(input("Enter tax rate (in %): "))
 total_payment = calculate_total_payment(payment, tax)
