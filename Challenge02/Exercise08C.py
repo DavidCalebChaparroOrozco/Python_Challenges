@@ -1,18 +1,18 @@
 age = int(input('Enter your age: '))
 
-#twenties = (age >= 20 and age < 30)
-#print(twenties)
+# twenties = (age >= 20 and age < 30)
+# print(twenties)
 #
-#thirties = (age >= 30 and age < 40)
-#print(thirties)
+# thirties = (age >= 30 and age < 40)
+# print(thirties)
 
 if (20 <= age < 30) or (30 <=  age < 40):
     print('Inside the range (20\'s) or (30\'s)')
-    #if twenties:
+    # if twenties:
     #    print('within Twenty')
-    #elif thirties:
+    # elif thirties:
     #    print('within Thirty')
-    #else:
+    # else:
     #    print('Out of range')
 else:
     print("Is not among 20's or 30's")
