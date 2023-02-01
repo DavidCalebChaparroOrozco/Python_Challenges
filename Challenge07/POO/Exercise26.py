@@ -9,8 +9,9 @@ class Cube:
     def calculate_volume(self):
         return self.length * self.width * self.height
 
+
 width = int(input('Enter the width: '))
 length = int(input('Enter the length: '))
 height = int(input('Enter the height: '))
-rectangle1 = Cube(width,length, height)
+rectangle1 = Cube(width, length, height)
 print(f'Cube volume: {rectangle1.calculate_volume()}')
