@@ -38,7 +38,9 @@ class Person:
     def show_detail(self):
         print(f'Person: {self._first_name} {self._last_name} {self._age}')
 
-
+    # Object destroyer
+    def __del__(self):
+        print(f'Person: {self._first_name} {self._last_name}')
 
 # This is a bad practice
 # person1._last_name = 'change'
