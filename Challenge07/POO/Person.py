@@ -8,12 +8,18 @@
 class Person:
     # __init__: Allows to add attributes to classes and to initialize these attributes.
     # self: is a parameter for default, it is also a reference to the object itself.
-    def __init__(self):
-        self.first_name = 'Rick'
-        self.last_name = 'Sanchez'
-        self.age = 70
+    def __init__(self, first_name, last_name, age):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.age = age
 
-person1 = Person()
-print(person1.first_name)
-print(person1.last_name)
-print(person1.age)
+# Rick Sanchez 70
+person1 = Person('Rick', 'Sanchez', 70)
+# print(person1.first_name)
+# print(person1.last_name)
+# print(person1.age)
+print(f'Object person 1: {person1.first_name} {person1.last_name} {person1.age}')
+
+# Morty Smith 14
+person2 = Person('Morty', 'Smith', 14)
+print(f'Object person 2: {person2.first_name} {person2.last_name} {person2.age}')
