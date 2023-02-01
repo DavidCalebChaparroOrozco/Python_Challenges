@@ -10,3 +10,6 @@ class Color:
     @color.setter
     def first_name(self, color):
         self._color = color
+
+    def __str__(self):
+        return f'Color [color: {self._color}]'

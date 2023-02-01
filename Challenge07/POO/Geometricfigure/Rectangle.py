@@ -1,10 +1,9 @@
 from Geometricfigure import *
 from Color import *
 
-class Square(GeometricFigure, Color):
-    def __init__(self, side, color):
-        # super().__init__(side)
-        GeometricFigure.__init__(self, side, side)
+class Rectangle(GeometricFigure, Color):
+    def __init__(self, width, height, color):
+        GeometricFigure.__init__(self, width, height)
         Color.__init__(self, color)
 
     def calculate_area(self):
