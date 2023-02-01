@@ -14,12 +14,22 @@ class Person:
         self.age = age
 
 # Rick Sanchez 70
-person1 = Person('Rick', 'Sanchez', 70)
+person1 = Person('Rick', 'Sanches', 69)
 # print(person1.first_name)
 # print(person1.last_name)
 # print(person1.age)
 print(f'Object person 1: {person1.first_name} {person1.last_name} {person1.age}')
 
+person1.first_name = 'Rick'
+person1.last_name = 'Sanchez C-137'
+person1.age = 70
+print(f'Object person 1: {person1.first_name} {person1.last_name} {person1.age}')
+
 # Morty Smith 14
-person2 = Person('Morty', 'Smith', 14)
+person2 = Person('Morty', 'Smith', 13)
+print(f'Object person 2: {person2.first_name} {person2.last_name} {person2.age}')
+
+person2.first_name = 'Morty'
+person2.last_name = 'Smith C-131'
+person2.age = 14
 print(f'Object person 2: {person2.first_name} {person2.last_name} {person2.age}')
