@@ -1,5 +1,5 @@
 # Use of modules and classes
-from encapsulationPerson import Person
+from Person import Person
 
 if __name__ == '__main__':
     print('Object creation'.center(50,'-'))
