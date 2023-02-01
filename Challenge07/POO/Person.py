@@ -28,8 +28,11 @@ person1.first_name = 'Rick'
 person1.last_name = 'Sanchez C-137'
 person1.age = 70
 # print(f'Object person 1: {person1.first_name} {person1.last_name} {person1.age}')
-person1.show_detail()
+# person1.show_detail()
+Person.show_detail(person1)
 
+person1.phone = '1234'
+print(person1.phone)
 # Morty Smith 14
 person2 = Person('Morty', 'Smith', 13)
 # print(f'Object person 2: {person2.first_name} {person2.last_name} {person2.age}')
@@ -38,4 +41,5 @@ person2.first_name = 'Morty'
 person2.last_name = 'Smith C-131'
 person2.age = 14
 # print(f'Object person 2: {person2.first_name} {person2.last_name} {person2.age}')
-person2.show_detail()
+# person2.show_detail()
+Person.show_detail(person2)
