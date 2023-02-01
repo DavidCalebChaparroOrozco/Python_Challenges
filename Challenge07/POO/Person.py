@@ -8,17 +8,19 @@
 class Person:
     # __init__: Allows to add attributes to classes and to initialize these attributes.
     # self: is a parameter for default, it is also a reference to the object itself.
-    def __init__(self, first_name, last_name, age):
+    def __init__(self, first_name, last_name, age, *travel, **tools):
         self.first_name = first_name
         self.last_name = last_name
         self.age = age
+        self.travel = travel
+        self.tools = tools
 
     def show_detail(self):
-        print(f'Person: {self.first_name} {self.last_name} {self.age}')
+        print(f'Person: {self.first_name} {self.last_name} {self.age} {self.travel} {self.tools}')
 
 
 # Rick Sanchez 70
-person1 = Person('Rick', 'Sanches', 69)
+person1 = Person('Rick', 'Sanches', 69,'Space cruiser', 'Portal gun', Weapons = 'Freeze ray',  Helper= 'Meeseeks Box' )
 # print(person1.first_name)
 # print(person1.last_name)
 # print(person1.age)
@@ -31,8 +33,10 @@ person1.age = 70
 # person1.show_detail()
 Person.show_detail(person1)
 
-person1.phone = '1234'
-print(person1.phone)
+# person1.phone = '1234'
+# print(person1.phone)
+
+
 # Morty Smith 14
 person2 = Person('Morty', 'Smith', 13)
 # print(f'Object person 2: {person2.first_name} {person2.last_name} {person2.age}')
