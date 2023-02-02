@@ -1,4 +1,6 @@
-class GeometricFigure:
+# ABC = Abstract Base Class
+from abc import ABC, abstractmethod
+class GeometricFigure(ABC):
     def __init__(self, width, height):
         if self._valide_value(width):
             self._width = width
@@ -32,6 +34,10 @@ class GeometricFigure:
             self._height = height
         else:
             print(f'Wrong height value {height}')
+
+    @abstractmethod
+    def calculate_area(self):
+        pass
 
     def __str__(self):
         return f'Geometric figure [Width: {self._width}, Height: {self._height}]'

@@ -19,3 +19,9 @@ rectangle1 = Rectangle(width=9,height=8,color='Green')
 rectangle1.height = 8
 print(f'Calculate rectangle area: {rectangle1.calculate_area()}')
 print(rectangle1)
+
+# You cannot instantiate an abstract class
+# figure = GeometricFigure()
+
+# A new hierarchical order is established
+# print(Square.mro())
