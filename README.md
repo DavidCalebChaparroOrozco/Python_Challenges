@@ -17,4 +17,5 @@ Starting from basic Python syntax to working with Flask and Django themes.
 
 - Challenges06: Functions (passing Arguments, return statement, default values + hint, variable arguments)
 
-- Challenges07: Class and Objects (POO)
+- Challenges07: Class and Objects (POO), multiple inheritance, validations, encapsulation (get/set) / read-only 
+attributes
