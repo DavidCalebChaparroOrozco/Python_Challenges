@@ -13,15 +13,15 @@ class Product:
 
     @name.setter
     def name(self, name):
-        self._first_name = name
+        self._name = name
 
     @property
     def price(self):
         return self._price
 
     @price.setter
-    def name(self, price):
-        self._first_name = price
+    def price(self, price):
+        self._price = price
 
     def __str__(self):
         return f'Id product: {self._id_product}, Name: {self._name}, Price: {self._price}'
