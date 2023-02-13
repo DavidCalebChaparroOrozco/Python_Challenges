@@ -21,3 +21,5 @@ Starting from basic Python syntax to working with Flask and Django themes.
 attributes, class design
 
 - Challenges08: Exceptions, Error handling
+
+- Challenges09: File management, read file, files with, resource manager
