@@ -7,7 +7,7 @@ class MovieCatalog:
     @classmethod
     def add_movie(cls, movie):
         with open(cls.file_path, 'a', encoding='utf8') as file:
-            file.write(f'{movie._name}\n')
+            file.write(f'{movie._name} - {movie._year}\n')
 
     @classmethod
     def list_movies(cls):
