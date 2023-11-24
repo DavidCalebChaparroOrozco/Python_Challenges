@@ -1,0 +1,408 @@
+MapReduce: Se ejecuta en Hadoop, para big data
+	documentación: https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html
+
+En zona de datos crudos, se acceden por particiones teniendo el periodo de datos que se requieren, si son solo INCREMENTALES.
+TODAS LAS TABLAS CRUDAS TIENEN: YEAR de partición pero otras estan con MONTH y DAT, otras con particiones especiales donde se ve con "SHOW PARTITIONS tabla"
+
+Zona de resultados: Se realiza la operacion y democraticazión de resultados
+	-Campos de particiones (usuales): ingrestion_year, ingestion_month, ingestion_day.
+	-Esquema de depuración: Def en base al tiempo diligenciado por el user al publicar la tabla.
+	-Metadata: Sharepoint sin acceso.
+	-Lineamientos de publicación: Sharepoint sin acceso.
+
+Zona de procesos: para almacenar tablas temporales para desarrollo analitico.
+	-Campos de particiones (usuales): ingrestion_year, ingestion_month, ingestion_day.
+	-Esquema de depuración: Sharepoint sin acceso. Los usuarios son responsables de mantener el almacenamiento en zona, validar tablas que no se requieren o son temporales (periodicamente)
+	-Metadata: No aplica
+	
+DIAGNOSTICO DE UNA CONSULTA:
+EXPLAIN: Muestra los mecanicos de bajo nivel que son utilizados para leer los datos, divide los nodos del cluster y tranmite los resultados.
+	Doc: https://impala.apache.org/docs/build/html/topics/impala_explain.html
+Ejm:
+EXPLAIN SELECT ...
+EXPLAIN INSERT ...
+EXPLAIN CREATE TABLE ...
+
+Para su lectura se centra en los sgts datos que evalua el desempeño que tiene la consulta y el plan de ejecución.
+	-Max Per-Host Resource Reservation: Indica la memoria que es almacenada por cada host para la ejecución del query.
+		Ejm: Max Per-Host Resource Reservation: Memory=4.06MB Threads=4
+	
+	-Per Host Resource Estimates: Indica la memoria estimada por hosts para la query, la memoria no debe ser > 20 GB.
+		Ejm: Per-Host Resource Estimates: Memory=52MB
+	
+	-Scan HDFS(Plan de ejecución): 
+		-HDFS partitions=1/42 files=1 size=90.44KB. La tabla cuenta con 42 particiones y solo se ha leido una de tamaño, si la tabla no esta particionada el resultado es partitions=1/1
+		-Debe existir solo un archivo bajo tabla/partición (files=1)
+		-Si hay estadisticas disponibles en la tabla se ve: row-size=376B cardinality=23
+		 Si no hay stats-rows=unavailable, table stats: rows=unavailable and cardinality=unavailable
+		 
+	- HDFS: Revisa el consumo o HCAN HDFS, deben ser acordes al particionamiento de la tabla evitando leer tablas de gran tamaño (>10TB leidas son canceladas)
+		WARNING The following tables are missing relevant table and/or column statistics: Requieren ser ejecutadas COMPUTE STATS.
+		
+CREAR TABLAS:
+	- Formato Parquet: Son usadas para consultas anchas y tablas "anchas" con muchas columnas, que realizan operaciones como SUM() y AVG() que necesitan procesar todos los valores de una columna.
+	
+	- TBLPROPERTIES: permite configurar diferentes parametros que caracterizan una tabla a crear, puede ser modificada por ALTER TABLE y evitar bloqueos en HUE.
+		PD: Todas las tablas se crean por defecto como no transaccionales, el usuario desea crear una tabla con esta caracteristica activa, debe validarlo la LZ.
+	
+	- COMPUTE STATS: recolecta información sobre el volumen y distribucción de datos en una tabla y todas las columnas y particiones asociadas. La informacion se almacena en BD metastore para optimizar las consultas.
+			doc: https://docs.cloudera.com/documentation/enterprise/6/6.3/topics/impala_compute_stats.html#compute_stats
+		ejm desde una consulta:
+		CREATE TABLE zona_destino.tabla
+		STORED AS PARQUET AS
+		SELECT 
+			.
+			.
+			.
+		FROM zona_origen.tabla_origen;
+		COMPUTE STATS zona_destino.tabla;
+		ejm desde la estructura:
+		CREATE TABLE zona_destino.tabla
+		(
+		 col_1 data_type,
+		 col_2 data_type,
+		 col_3 data_type,
+		 .
+		 .
+		)
+		STORED AS PARQUET;
+			doc: https://docs.cloudera.com/documentation/enterprise/6/6.3/topics/impala_create_table.html
+		
+PARTICIONES: Todas las tablas deben contener ingestion_day, ingestion_month, ingestion_year. Que corresponden a una fecha de ingrestión virtual donde son alineados con la FECHA CORTE o FECHA PROCESO, pero no necesariamente con la fecha ingestion.
+			 cuando la información corresponde a cortes mensuales.
+				ingestion_day = al ultimo día del mes
+			 La trazabilidad de una fecha de la ingestion fisica, se genera un campo tipo timestamp con nombre ingestion_timestamp
+				ingestion_timestamp = marca del tiempo especifica del momento de la inserción de los datos.
+			ES OBLIGATORIO: particionar por ingestion_year.
+			Si es MENSUAL: ingestion_month y ingestion_year si la información que cargue en el mes >256MB
+				DESCRIBE FORMATTED zona.tabla = valida peso de la tabla.
+			ejm ingestion mensual:
+			CREATE table if not exists
+			zona_resultados.tabla
+			PARTITIONED BY (ingestion_month, ingestion_year)
+			STORED AS PARQUET AS
+			SELECT
+				f_proceso_ts -- Fecha del proceso en formato timestamp,
+				id,
+				obligación,
+				segmento,
+				calificación,
+				now() as ingestion_timestamp,
+				day(last_day(f_proceso_ts)) as ingestion_day,
+				month(f_proceso_ts) as ingestion_month,
+				year(f_proceso_ts) as ingestion_year,
+			FROM zona_origen.tabla_origen;
+			COMPUTE STATS zona_destino.tabla;
+			
+ESTADISTICAS DE UNA TABLA
+Sentencia COMPUTE STATS: recopila información sobre el volumen y la distribucción de datos en una tabla y todas las columnas y particiones asociadas
+	USAR COMPUTE STATS o COMPUTE STATS INCREMENTAL puede afectar el rendimiento del Cluster.
+
+Sintaxis: COMPUTE STATS zona.tabla;
+	Es para la actualización de las estadisticas, que optimiza el uso de memoria en la LZ.
+	Si se realiza la creación de una tabla, modificación de estructura o cambio en la cantidad de registros.
+	
+
+BUENAS PRACTICAS CONSULTAS LZ
+INSERT INTO table VALUES (registro_1;registro_2;registro_;...,registro_n)
+Ejm:
+INSERT INTO resultados_vspc_pagos_y_recaudos. 
+rec_sabana_base_facturacion_hist partition(year=2022, month=1) SELECT …
+
+JOINS: Maximo 5 tablas, los campos numericos que sean STRING, se castean como BIGINT.
+ejm: 
+	SELECT Cast(cnnamk AS BIGINT)AS llave_nombre, 
+		Cast(cnnoss AS BIGINT)AS ident_cn, 
+		Cast(cncdti AS TINYINT) AS tipo_doc_cn, 
+		Trim(cncdty)AS tipo_cliente, 
+		Trim(cncdst)AS estado_cliente, 
+		Trim(cncdcc)AS control_terceros, 
+		Trim(cncdbi)AS segmento 
+	FROM s_clientes.bvclegados_visionr_cname t1 
+	JOIN fecha_cname t2 
+	ON year = y 
+	AND month = m 
+	AND day = d;
+
+TABLAS TEMPORALES
+Si la consulta accede varias veces a zona de datos crudos, debe generar un subconjunto de datos de procesos del área de conocimiento que le corresponde y realizar las demas consultas contra la nueva tabla para ejecutar COMPUTE STATS
+ejm: varias veces s_productos.bvd_visionr_dbal
+	CREATE TABLE proceso.tabla_temporal
+	STORED AS PARQUET TBLPROPERTIES AS
+	PARTIRIONED BY (ingestion_year, ingestion_month)
+	SELECT
+		dmapcd,
+		dmbrn,
+		dmstyd,
+		ingestion_year,
+		ingestion_month
+	FROM s_productos.bvd_visionr_dbal
+	WHERE year = 2021
+	 AND month BETWEEN 3 AND 7
+	 AND day = 1; 
+	COMPUTE STATS proceso.tabla_temporal;
+	
+SI SE UTILIZA VARIAS VECES WITH SE CREA UNA TABLA TEMPORAL
+
+CREATE TABLE proceso.tbl_1
+STORED AS PARQUET AS
+SELECT
+	campo_1,
+	campo_2,
+	campo_3
+FROM zona_1.tabla_1; 
+COMPUTE STATS proceso.tbl_1;
+
+CREATE TABLE proceso.tbl_2
+STORED AS PARQUET TBLPROPERTIES AS
+SELECT
+	campo_1,
+	campo_2,
+	campo_3
+FROM zona_2.tabla_2; 
+COMPUTE STATS proceso.tbl_2;
+.
+.
+.
+WITH tbl_n-1 AS
+(
+SELECT
+	campo_1,
+	campo_2,
+	campo_3
+.
+.
+FROM zona_n-1.tabla_n-1
+), WITH tbl_n AS
+(
+SELECT
+	campo_1,
+	campo_2,
+	campo_3
+ .
+ .
+FROM zona_n.tabla_n
+)
+
+
+Para las sentencias WITH:
+	- Maximo 5 WITHS por consulta
+	- <5 crear tabla temporal
+	- Evitar WITH anidados
+
+Para las sentencias UNION con maximo 5 tablas.
+
+OPERADOR IN
+	- NO EJECUTAR SELECT dentro de un IN
+	SELECT 
+		num_doc,
+		nombre,
+		apellido,
+		telefono
+	FROM zona.tabla_1
+	WHERE num_doc IN (SELECT num_doc FROM zona.tabla_2);
+	
+	- No deben superar 20 elementos.
+	SELECT 
+		num_doc,
+		nombre,
+		apellido,
+		codigo
+	FROM zona.tabla_1
+	WHERE codigo IN (cod1, cod2, cod3, cod4, …, codn);
+	
+	Es prererible usar tablas parametricas.
+		CREATE TABLE proceso.tbl_parametrica
+		STORED AS PARQUET TBLPROPERTIES AS
+		SELECT DISTINCT
+			codigo,
+			 .
+			 .
+			 .
+		FROM zona.tabla; 
+		COMPUTE STATS proceso. tbl_parametrica;
+		
+	- Hacer busquedas de todos los valores de la variable"codigo"
+		CREATE TABLE proceso.tbl_parametrica
+		STORED AS PARQUET TBLPROPERTIES AS
+		SELECT DISTINCT
+				codigo,
+		.
+		.
+		.
+		FROM zona.tabla
+		; 
+		COMPUTE STATS proceso. tbl_parametrica;
+
+	- Valores especificos de la variable "codigo"
+		CREATE TABLE proceso.tbl_parametrica
+		(
+			codigo data_type,
+		 .
+		 .
+		 .
+		)
+		STORED AS PARQUET TBLPROPERTIES;
+		
+	- Insertar sobre la tabla solo aquellos valores de la tabla codigo
+		INSERT INTO proceso.tbl_parametrica (codigo, ...)
+		VALUES (cod1, ...),
+		VALUES (cod2, ...),
+		VALUES (cod3, ...),
+		.
+		.
+		.;
+		COMPUTE STATS proceso.tbl_parametrica;
+		
+	- Cruce tabla de interes con la parametrica con el campo "codigo"
+		SELECT
+			t1.num_doc,
+			t1.nombre,
+			t1.apellido,
+			t1.codigo
+		FROM zona.tabla_1 t1
+		JOIN proceso.tbl_parametrica t2
+		ON t1.codigo = t2.codigo;
+		
+CASE WHEN
+- Se admite no mas de 50 sentencias CASE WHEN por consulta, el limite de WHEN es 20 en c/u
+Si son superiores reemplazar por tabla parametros en zona de datos procesos (ZDP). Solución:
+Particionar el query en tablas temporales, aplicando la evaluación del case when por partes,
+para ayudar al control de recursos y su mantenibilidad.
+
+Shuffle: Evita llevar a memoria todos los datos, y solo utilizar los necesarios. Solo usarlo
+cuando se ejecutan JOINS entre tablas pesadas, considere optimizar las consultas antes del comando.
+doc: https://docs.cloudera.com/documentation/enterprise/6/6.3/topics/impala_hints.html
+ejm: 
+WITH cname_1 AS
+(
+SELECT
+	cnnamk, 
+	cnnoss AS num_id, 
+FROM s_clientes.bvclegados_visionr_cname 
+WHERE year = 2017 
+AND month < 3
+), cmark_1 AS
+(
+SELECT 
+	cmnamk, 
+	cmcdm8 AS subsegmento 
+FROM s_clientes.bvclegados_visionr_cmark 
+WHERE year = 2017 
+AND month < 3
+), cxref_1 AS
+(
+SELECT 
+	cxcdap, 
+	cxnoac, 
+FROM s_clientes.bvclegados_visionr_cxref 
+WHERE year = 2017 
+AND month < 3
+), dbal1_1 AS
+(
+ SELECT 
+	dmacct, 
+	dmbrn, 
+FROM s_productos.bvd_visionr_dbal 
+WHERE year = 2017 
+AND month < 3
+) 
+SELECT …
+FROM cname_1 
+INNER JOIN /* +SHUFFLE */ cmark_1 
+ON cnnamk = cmnamk 
+INNER JOIN /* +SHUFFLE */ cxref_1 
+ON cnnamk = cxnamk 
+INNER JOIN /* +SHUFFLE */ dbal1_1 
+ON cxnoac = dmacct
+---------------------------------------------------------------------
+Este método evitará que sea descartado por librerías como Helper, donde de la manera /* +SHUFFLE*/ lo 
+identifica como un comentario
+SELECT … 
+FROM cname_1 
+INNER JOIN [SHUFFLE] cmark_1 
+ON cnnamk = cmnamk 
+INNER JOIN [SHUFFLE] cxref_1 
+ON cnnamk = cxnamk 
+INNER JOIN [SHUFFLE] dbal1_1 
+ON cxnoac = dmacct
+
+
+AUTOMATIZADORES FUENTES
+Para conocer quienes son los autorizadores y/o encargados de una tabla consultar la tabla resultados.autorizadores_fuentes
+SELECT 
+	nomb_tabla_hiv,
+	nomb_tabla_hive,
+	descripcion,
+	area_resp_publicacion,
+	nombre_aprobador_1,
+	usuario_red_ap1,
+	nombre_aprobador_2,
+	usuario_red_ap2,
+	periodicidad,
+	tipo_ingestion,
+	dia_publicacion,
+	tiempo_perman_anho,
+	grupo,
+	estado
+FROM resultados.autorizadores_fuentes
+WHERE nomb_tabla_hiv = "resultados"
+AND nomb_tabla_hive = "autorizadores_fuentes";
+
+
+Grupos de seguridad (PBI)
+Reporte para observar los grupos de seguridad a los cuales tiene acceso
+doc: https://app.powerbi.com/singleSignOn?route=groups%2fme%2freports%2fc6198b2c-a240-4e3f-8b1f-15dab8cba20a%2fReportSection04f47da116cd4a916000&ru=https:%2f%2fapp.powerbi.com%2f%3froute%3dgroups%252fme%252freports%252fc6198b2c-a240-4e3f-8b1f-15dab8cba20a%252fReportSection04f47da116cd4a916000%26noSignUpCheck%3d1
+
+ARCHIVOS PEQUEÑOS Y COMPACTACIÓN DE ARCHIVOS PEQUEÑOS
+La existencia de archivos pequeños en LZ puede generar problemas de desempeño de la plataforma, lo que vuelve a la LZ lenta
+e incosistente en los resultados.
+El archivo pequeño se considera aquel que pesa <128Mb.
+	- Una tabla se particiona, cada particion se almacena en un archivo diferente.
+	- Una tabla recibe ingestiones periodias en el tiempo, generalmente cada ingestión se almacena en un archivo.
+IMPORTANTE
+	- Determinar la cantidad de campos de partición a utilizar, que asegure los datos correspondientes a una partición pesen
+	256Mb.
+	
+	- Realizar procesos de validación y compactación peridicos a aquellas tablas que son reciben ingestiones pequeñas en el tiempo.
+	
+	
+Condición para compactar archivos: La cantidad de archivos y su peso:
+SHOW FILES in proceso.tabla
+No debe ser menor a 128Mb.
+
+Tabla para saber cuántos archivos pequeños hay en la tabla:
+resultados.small_files_report
+
+Procesos de compactación de archivos, para limitar el procesamiento en paralelo.
+Por esto se deben configurar los parametros de la tabla:
+-- Tabla fragmentada: resultados.tabla_fragmentada maximo 256Mb
+set PARQUET_FILE_SIZE = 256m;
+
+-- Para forzar a que un unico nodo lea todos los archivos pequeños y los escriba en un archivo.
+SET NUM_NODES = 1;
+
+CREATE TABLE proceso.tabla_compactada STORED AS PARQUET AS
+SELECT
+	...
+FROM resultados.tabla_fragmentada;
+
+INSERT OVERWRITE resultados.tabla_fragmentada
+-- Las particiones que corresponden
+PARTITIONED(ingestion_month, ingestion_year)
+SELECT
+	...
+FROM proceso.tabla_compactada;
+
+-- Regresar valor por defecto para procesamiento en el cluster completo
+SET NUM_NODES = 0;
+
+QUERY KILLER: Evalua el plan de ejecución en tiempo real de todos los queries lanzados por los
+usuarios y toma acciones de acuerdo con el consumo de recursos. Cuenta dos directrices:
+	- Si la consulta supera 2 horas de tiempo de ejecución, se detiene el proceso.
+	- Si supera 80 GB en consumo de memoria fisica, se detiene el proceso.
+Esta herramienta evita el consumo de alto consumo que afectan las rutinas de la comunidad analitica.
+
+Se recomienda hacer una lectura del plan de ejecución mediante el comando EXPLAIN
+(memoria reservada y lectura de archivos HDFS)
+
